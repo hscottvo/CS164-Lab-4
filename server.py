@@ -1,9 +1,13 @@
 import socket
 import sys
 from _thread import *
+from datetime import datetime
 
 HOST = ''
 PORT = 9822
+
+i = 0
+connection_dict = {}
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -21,27 +25,34 @@ s.listen(10)
 print('Socket now listening')
 
 
-def clientthread(conn):
+def clientthread(conn, num: int):
     conn.send(b"Welcome to the server. Type something and hit enter\n")
 
     while True:
         data = conn.recv(1024)
 
         if data.startswith(b"!q"):
+            del connection_dict[num]
             break
+        elif data.startswith(b'!sendall '):
+            now = datetime.now()
+            reply = now.strftime("%H:%M:%S").encode('utf-8') + b': ' + data.lstrip(b'!sendall ')
+            for connection in connection_dict.values():
+                connection.sendall(reply)
         else:
-            reply = b"OK..." + data
+            now = datetime.now()
+            reply = now.strftime("%H:%M:%S").encode('utf-8') + b": OK..." + data
             if not data:
                 break
 
             conn.sendall(reply)
     conn.close()
-
 while True:
     conn, addr = s.accept()
-
+    connection_dict[i] = conn
     print(f"Connected with {addr[0]}: {str(addr[1])}")
 
-    start_new_thread(clientthread, (conn,))
+    start_new_thread(clientthread, (conn, i,))
+    i += 1
 
 s.close()
