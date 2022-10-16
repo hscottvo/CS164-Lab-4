@@ -26,11 +26,15 @@ def clientthread(conn):
 
     while True:
         data = conn.recv(1024)
-        reply = b"OK..." + data
-        if not data:
-            break
 
-        conn.sendall(reply)
+        if data.startswith(b"!q"):
+            break
+        else:
+            reply = b"OK..." + data
+            if not data:
+                break
+
+            conn.sendall(reply)
     conn.close()
 
 while True:
